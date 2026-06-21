@@ -1,124 +1,98 @@
 #!/usr/bin/env bash
 #
-# Joplin CLI Quickstart — Headless Terminal Setup
-# Installs the Joplin terminal app and syncs it with a shared Joplin Server.
-# This does NOT install Joplin Server — only the client.
-#
-# Server: https://joplin-server-s9yj.srv620544.hstgr.cloud
-# Usage:  bash setup.sh
-#
+# ============================================================
+# Joplin CLI One-Command Installer
+# Target: any Linux VPS or local machine (Ubuntu/Debian)
+# Result: fully synced Joplin terminal client
+# ============================================================
 set -euo pipefail
 
-JOPLIN_SERVER_URL="https://joplin-server-s9yj.srv620544.hstgr.cloud"
-NPM_PREFIX="${HOME}/.npm-global"
+# Server settings (edit if you run your own server)
+SERVER_URL="https://joplin-server-s9yj.srv620544.hstgr.cloud"
 
-# ---- Colors ----
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+echo "=========================================="
+echo "  Joplin CLI Installer"
+echo "=========================================="
 
-echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  Joplin CLI Quickstart — Headless Setup${NC}"
-echo -e "${CYAN}============================================${NC}"
-echo ""
-echo -e "Server: ${GREEN}${JOPLIN_SERVER_URL}${NC}"
-echo "This installs the Joplin TERMINAL APP only (not the server)."
-echo ""
-
-# ---- Step 1: Install Node.js if missing ----
-echo -e "${GREEN}[1/4]${NC} Checking Node.js..."
-if ! command -v node &>/dev/null; then
-    echo "  Node.js not found. Installing via NodeSource..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+# ------------------- NODE CHECK -------------------
+if ! command -v node &> /dev/null; then
+    echo "Node.js not found. Installing..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null || {
+        echo "Could not install Node.js automatically."
+        echo "Install Node 18+ manually, then re-run this script."
+        exit 1
+    }
     sudo apt install -y nodejs
-    echo "  Node.js $(node --version) installed."
 else
-    echo "  Node.js $(node --version) — OK"
+    echo "Node.js: $(node --version)"
 fi
 
-if ! command -v npm &>/dev/null; then
-    echo "  npm not found. Installing..."
-    sudo apt install -y npm
-fi
-echo "  npm $(npm --version) — OK"
+# ------------------- INSTALL JOPLIN CLI -------------------
+echo "Installing Joplin CLI globally..."
+npm install -g joplin
 
-# ---- Step 2: Install Joplin CLI ----
-echo -e "${GREEN}[2/4]${NC} Installing Joplin CLI..."
-mkdir -p "${NPM_PREFIX}"
-npm config set prefix "${NPM_PREFIX}" 2>/dev/null || true
-export PATH="${NPM_PREFIX}/bin:$PATH"
+# Add to PATH for this session
+export PATH="$HOME/.npm-global/bin:$PATH"
 
-if command -v joplin &>/dev/null; then
-    echo "  Joplin CLI already installed — checking for update..."
-    npm update -g joplin 2>&1 | tail -1
+# Determine shell profile
+SHELL_RC=""
+if [[ "$SHELL" == */bash ]]; then
+    SHELL_RC="$HOME/.bashrc"
+elif [[ "$SHELL" == */zsh ]]; then
+    SHELL_RC="$HOME/.zshrc"
 else
-    npm install -g joplin
+    SHELL_RC="$HOME/.bashrc"
 fi
 
-echo "  $(joplin help 2>&1 | head -1)"
-echo ""
-
-# ---- Step 3: Configure sync ----
-echo -e "${GREEN}[3/4]${NC} Configuring Joplin sync..."
-
-# Prompt for credentials
-read -p "  Enter your email for Joplin Server: " JOPLIN_EMAIL
-read -s -p "  Enter the shared Joplin Server password: " JOPLIN_PASSWORD
-echo ""
-
-if [ -z "${JOPLIN_EMAIL}" ] || [ -z "${JOPLIN_PASSWORD}" ]; then
-    echo -e "  ${RED}Error: Email and password are required.${NC}"
-    exit 1
-fi
-
-# Ensure config directory exists
-mkdir -p "${HOME}/.config/joplin"
-
-# Write settings.json
-cat > "${HOME}/.config/joplin/settings.json" << SETTINGSEOF
-{
-	"\$schema": "https://joplinapp.org/schema/settings.json",
-	"sync.target": 9,
-	"sync.9.path": "${JOPLIN_SERVER_URL}",
-	"sync.9.username": "${JOPLIN_EMAIL}",
-	"sync.9.password": "${JOPLIN_PASSWORD}",
-	"sync.wipeOutFailSafe": false,
-	"sync.interval": 300,
-	"editor": "nano",
-	"locale": "en_GB",
-	"markdown.plugin.softbreaks": false,
-	"markdown.plugin.typographer": false
-}
-SETTINGSEOF
-
-echo -e "  ${GREEN}Settings configured.${NC}"
-
-# ---- Step 4: Initial sync ----
-echo -e "${GREEN}[4/4]${NC} Running initial sync..."
-cd "${HOME}"
-joplin sync 2>&1 || true
-echo ""
-
-# ---- Add PATH to bashrc ----
-if ! grep -q "${NPM_PREFIX}/bin" "${HOME}/.bashrc" 2>/dev/null; then
-    echo "export PATH=\"${NPM_PREFIX}/bin:\$PATH\"" >> "${HOME}/.bashrc"
-    echo -e "  Added Joplin to ${HOME}/.bashrc"
+# Add to profile if not present
+if ! grep -q "\.npm-global/bin" "$SHELL_RC" 2>/dev/null; then
+    echo "Adding Joplin to $SHELL_RC..."
+    echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$SHELL_RC"
 fi
 
 echo ""
-echo -e "${CYAN}============================================${NC}"
-echo -e "${GREEN}  ✅  Joplin CLI is ready!${NC}"
-echo -e "${CYAN}============================================${NC}"
+echo "=========================================="
+echo "       Account Setup"
+echo "=========================================="
+
+# Read credentials interactive
+read -rp "Enter your email (Joplin login): " USER_EMAIL
+read -rsp "Enter the shared server password: " USER_PASS
 echo ""
-echo -e "  Run ${GREEN}joplin${NC} to launch the interactive UI"
-echo "  or use commands like:"
-echo "    joplin mknote \"My note\""
-echo "    joplin cat \"My note\""
-echo "    joplin sync"
+
+# ------------------- CONFIGURE SYNC -------------------
+echo "Configuring sync..."
+joplin config sync.target 9
+joplin config sync.9.path "$SERVER_URL"
+joplin config sync.9.username "$USER_EMAIL"
+joplin config sync.9.password "$USER_PASS"
+
+# Default to manual sync (safer for automated scripts)
+joplin config sync.interval 0
+
+# Disable wipe failsafe for multi-client use
+joplin config sync.wipeOutFailSafe 0
+
+# ------------------- FIRST SYNC -------------------
 echo ""
-echo -e "  Server: ${JOPLIN_SERVER_URL}"
-echo -e "  Email:  ${JOPLIN_EMAIL}"
+echo "Running first sync..."
+joplin sync
+
 echo ""
-echo "  Notes are synced automatically every 5 minutes."
+echo "=========================================="
+echo "           INSTALL COMPLETE"
+echo "=========================================="
 echo ""
+echo " Quick commands:"
+echo "   joplin                    # Launch interactive UI"
+echo "   joplin sync               # Manual sync"
+echo "   joplin mkbook \"Notes\"    # Create a notebook"
+echo "   joplin ls                 # List notes"
+echo "   joplin search \"keyword\"  # Find anything"
+echo ""
+echo " Sync server:  $SERVER_URL"
+echo " Logged in as: $USER_EMAIL"
+echo " Sync mode:    manual (interval=0)"
+echo ""
+echo " See BATCH-OPERATIONS.md for bulk tagging, imports, and advanced workflows."
+echo "=========================================="

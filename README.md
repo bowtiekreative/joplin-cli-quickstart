@@ -1,64 +1,69 @@
 # Joplin CLI Quickstart — Headless Terminal Setup
 
-> One-command setup for the **Joplin terminal app** (not the server).  
-> Syncs with a shared Joplin Server — all you need is the password.
+> One-command setup for the **Joplin terminal app** (not the server). Syncs with a shared Joplin Server — all you need is the password.
 
-## What this is
+## What It Is
 
-This installs the **Joplin CLI** (terminal note-taking app) on any Linux VPS and connects it to a shared Joplin Server. You get a full Markdown note-taking app in your terminal that syncs automatically with everyone else on the same server.
+Installs the **Joplin CLI** (terminal note-taking app) on any Linux VPS and connects it to a shared Joplin Server as a **client**. This does **NOT** install Joplin Server itself — it only connects to an existing instance.
 
-**This does NOT install Joplin Server.** The server is already running — we're just connecting to it as a client.
+**Key benefit:** Full Markdown note-taking in your terminal with automatic multi-user sync.
 
 ## Prerequisites
 
-- A Linux VPS (Ubuntu/Debian recommended)
-- Node.js 18+ and npm (the script installs these if missing)
-- The shared server password from the team
+- Linux VPS (Ubuntu/Debian recommended)
+- Node.js 18+ and npm *(script installs these if missing)*
+- Shared server password from your team admin
 
 ## Quick Start
 
+One-command install:
 ```bash
 curl -sL https://raw.githubusercontent.com/bowtiekreative/joplin-cli-quickstart/main/setup.sh | bash
 ```
 
-Or clone and run:
-
+Or clone manually:
 ```bash
 git clone https://github.com/bowtiekreative/joplin-cli-quickstart.git
 cd joplin-cli-quickstart
 bash setup.sh
 ```
 
-You'll be prompted for:
-1. **Your email** — used as your Joplin Server login
-2. **The shared password** — provided by the team admin
+**Setup prompts:**
+1. **Your email** — used as your Joplin Server login/identifier
+2. **Shared password** — provided by the team admin
 
-## What gets installed
+## Server Details
+
+| Setting | Value |
+|--------|-------|
+| **Server URL** | `https://joplin-server-s9yj.srv620544.hstgr.cloud` |
+| **Email** | Your email |
+| **Password** | From team admin |
+
+## What Gets Installed
 
 | Component | Purpose |
 |-----------|---------|
-| **Joplin CLI** | Terminal note-taking app with Markdown, notebooks, tags, search |
-| **Auto-sync** | Syncs every 5 minutes with the shared server |
-| **Editor** | Set to `nano` (change with `joplin config editor vim`) |
+| **Joplin CLI** | Terminal note-taking with Markdown, notebooks, tags, and search |
+| **Auto-sync** | Syncs every 5 minutes with the shared server *(change to manual with `-m`)* |
+| **Editor** | Default: `nano` (change via `joplin config editor vim`) |
 
-## How to use it
+## How to Use It
 
+### Common Commands
 ```bash
-# Launch the interactive UI
-joplin
-
-# Or use commands directly
-joplin mkbook "Project Notes"        # create a notebook
-joplin mknote "Meeting 2025-06-20"   # create a note
-joplin use "Project Notes"           # switch notebook
-joplin ls                            # list notes in current notebook
-joplin cat "Meeting 2025-06-20"      # read a note
-joplin config editor vim             # change your editor
-joplin sync                          # manually sync now
-joplin search "keyword"              # search all notes
+joplin                              # Launch interactive UI
+joplin mkbook "Project Notes"        # Create a notebook
+joplin mknote "Meeting 2025-06-20"   # Create a note
+joplin use "Project Notes"           # Switch notebook
+joplin ls                            # List notes in current notebook
+joplin cat "Meeting 2025-06-20"      # Read a note
+joplin config editor vim             # Change default editor
+joplin sync                          # Manual sync now
+joplin search "keyword"              # Search all notes
 ```
 
-The interactive UI has three panes:
+### Interactive UI Layout
 ```
 ┌─────────────┬─────────────┬──────────────────┐
 │  Notebooks  │   Notes     │   Note Content   │
@@ -70,27 +75,33 @@ The interactive UI has three panes:
 └─────────────┴─────────────┴──────────────────┘
 ```
 
-- **Tab** / **Shift+Tab** — move between panes
+**Navigation:**
+- **Tab / Shift+Tab** — move between panes
 - **Arrow keys** — navigate
-- **:** — enter command mode (like vim)
+- **:** — enter command mode (vim-style)
 - **tc** — toggle console
 
-## What syncs
+## Advanced Operations
 
-- All your notes, notebooks, and tags sync to the shared Joplin Server
+See **[BATCH-OPERATIONS.md](BATCH-OPERATIONS.md)** for bulk tagging, batch imports, notebook organization, and automation workflows — everything needed to scale from 10 notes to a structured knowledge library.
+
+## What Syncs
+
+- All notes, notebooks, and tags sync to the shared Joplin Server
 - Notes created by anyone on the server appear in your terminal after sync
-- Sync runs automatically every 5 minutes
+- Automatic sync runs every **5 minutes** by default
 
-## Server Details
-
-- **Server URL:** `https://joplin-server-s9yj.srv620544.hstgr.cloud`
-- **Email:** Your email (used as identifier)
-- **Password:** Get this from the team admin
-
-## Files in this repo
+## Repository Files
 
 | File | Purpose |
 |------|---------|
 | `setup.sh` | One-command installer |
 | `SKILL.md` | Hermes AI agent skill for auto-setup |
-| `README.md` | This file |
+| `README.md` | Documentation |
+| `BATCH-OPERATIONS.md` | Bulk tagging, import, organization playbook |
+| `scripts/tag-batch.sh` | Batch tag helper |
+
+## Repo Metadata
+
+- **Author:** [bowtiekreative](https://github.com/bowtiekreative)
+- **Language:** Shell (100%)
